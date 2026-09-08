@@ -61,8 +61,9 @@ function applyChange(el, change, pct) {
 }
 
 // Draw the filling arc + needle on the half-circle gauge. score is -100..+100.
-// Arc spans left(180deg) -> top(270deg) -> right(360deg). We place the needle
-// at the same angle as the arc's end so they always agree.
+// We build the arc as a polyline from discrete points so the direction is
+// unambiguous (no SVG sweep-flag guessing). Angle spans 180deg(left) ->
+// 270deg(top) -> 360deg(right), i.e. needle rotation 0deg = up when score=0.
 const GAUGE_COLORS = {
   Buy: "#2ee6a0",
   Sell: "#ff5f7a",
@@ -70,52 +71,59 @@ const GAUGE_COLORS = {
 };
 function drawGauge(score, action) {
   const arc = $("gauge-arc");
+  const track = $("gauge-track");
   const needle = $("gauge-needle");
-  if (!arc || !needle) return;
+  if (!arc || !track || !needle) return;
 
   const cx = 100, cy = 110, r = 80;
   const pct = (score + 100) / 200; // 0..1 (0=far bearish, 1=far bullish)
-  // Angle measured in degrees: 180 (left) .. 360 (right), passing 270 (top).
-  const startDeg = 180;
-  const endDeg = startDeg + pct * 180;
 
-  const polar = (deg) => {
+  // Build a point on the half-circle. t in [0..1] maps angle 180..360deg.
+  // On screen (y down): 180deg => left, 270deg => top, 360deg => right.
+  const point = (t) => {
+    const deg = 180 + t * 180;
     const rad = (deg * Math.PI) / 180;
     return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
   };
-  const [x1, y1] = polar(startDeg);
-  const [x2, y2] = polar(endDeg);
 
-  // Fill arc: only show if there is something to show.
+  const toPoly = (pts) =>
+    pts.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" ");
+
+  // Track: full half-circle baseline.
+  const trackPts = [];
+  for (let i = 0; i <= 60; i++) trackPts.push(point(i / 60));
+  track.setAttribute("points", toPoly(trackPts));
+
+  // Signal arc from 0 to pct.
   if (pct > 0.001) {
-    // Going clockwise (sweep=0 in SVG coords for increasing angle from 180->360).
-    arc.setAttribute(
-      "d",
-      `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 0 0 ${x2.toFixed(2)} ${y2.toFixed(2)}`
-    );
-    // Solid color by signal direction (bright, readable). action is
-    // "Buy" | "Sell" | "Neutral"; map to a readable gauge color.
+    const arcPts = [];
+    const steps = Math.max(2, Math.round(60 * pct));
+    for (let i = 0; i <= steps; i++) arcPts.push(point((i / steps) * pct));
+    arc.setAttribute("points", toPoly(arcPts));
     const key = action === "Buy" ? "Buy" : action === "Sell" ? "Sell" : "neutral";
     const color = GAUGE_COLORS[key];
     arc.style.stroke = color;
     arc.style.filter = `drop-shadow(0 0 8px ${color}88)`;
   } else {
-    arc.setAttribute("d", "");
+    arc.setAttribute("points", "");
   }
 
-  // Needle: points from hub to the arc's end angle (inset slightly).
-  const nr = 74;
-  const [nx, ny] = polar(endDeg);
-  const tipX = cx + (nx - cx) * (nr / r);
-  const tipY = cy + (ny - cy) * (nr / r);
-  const lines = needle.querySelectorAll("line");
-  if (lines[0]) {
-    lines[0].setAttribute("x2", tipX.toFixed(2));
-    lines[0].setAttribute("y2", tipY.toFixed(2));
+  // Needle: point from hub to the arc's end angle (absolute coords, no rotation
+  // quirks). Length slightly shorter than the arc radius.
+  const nr = 70;
+  const endDeg = 180 + pct * 180;
+  const endRad = (endDeg * Math.PI) / 180;
+  const nx = cx + nr * Math.cos(endRad);
+  const ny = cy + nr * Math.sin(endRad);
+  const outer = document.getElementById("needle-outer");
+  const inner = document.getElementById("needle-inner");
+  if (outer) {
+    outer.setAttribute("x2", nx.toFixed(2));
+    outer.setAttribute("y2", ny.toFixed(2));
   }
-  if (lines[1]) {
-    lines[1].setAttribute("x2", tipX.toFixed(2));
-    lines[1].setAttribute("y2", tipY.toFixed(2));
+  if (inner) {
+    inner.setAttribute("x2", nx.toFixed(2));
+    inner.setAttribute("y2", ny.toFixed(2));
   }
 }
 
