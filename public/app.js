@@ -39,6 +39,7 @@ function renderChart(containerId, code, history) {
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
+      layout: { padding: { top: 6, bottom: 2 } },
       plugins: { legend: { display: false }, tooltip: { enabled: true } },
       scales: {
         x: { display: false },
@@ -63,23 +64,45 @@ function renderSignal(signal) {
   const { overall, vix, vxn, spread } = signal;
 
   setBadge($("vix-badge"), vix.action, `${vix.label} ${vix.score}`);
-  $("vix-conf").textContent = `置信度 ${vix.confidence} %`;
+  $("vix-conf").textContent = `置信度 ${vix.confidence}%`;
+  // Position on the -100..+100 -> 0..100% strength bar.
+  $("vix-pos").style.left = `${((vix.score + 100) / 200) * 100}%`;
+  $("vix-badge").className = "sig-badge " + vix.action.toLowerCase();
 
   setBadge($("vxn-badge"), vxn.action, `${vxn.label} ${vxn.score}`);
-  $("vxn-conf").textContent = `置信度 ${vxn.confidence} %`;
+  $("vxn-conf").textContent = `置信度 ${vxn.confidence}%`;
+  $("vxn-pos").style.left = `${((vxn.score + 100) / 200) * 100}%`;
+  $("vxn-badge").className = "sig-badge " + vxn.action.toLowerCase();
 
-  const ob = $("overall-badge");
-  ob.textContent = overall.label;
-  ob.className = "overall-badge " + overall.action.toLowerCase();
+  // Overall label + score.
   $("overall-score").textContent = overall.score;
-  $("overall-conf").textContent = `置信度 ${overall.confidence} %`;
+  $("overall-label").textContent = `/100 · ${overall.label}`;
+  $("overall-conf").textContent = `置信度 ${overall.confidence}%`;
 
-  // Map -100..100 to width 0..100% for the meter fill.
-  $("overall-meter").style.width = `${((overall.score + 100) / 200) * 100}%`;
+  // Gauge arc fill (half-circle = 251 length).
+  const pct = (overall.score + 100) / 200; // 0..1
+  const arc = $("gauge-arc");
+  if (arc) arc.style.strokeDashoffset = 251 - 251 * pct;
+
+  // Gauge needle: -90deg (left) .. +90deg (right).
+  const needle = $("gauge-needle");
+  if (needle) {
+    const ang = -90 + pct * 180; // degrees
+    const rad = (ang * Math.PI) / 180;
+    const r = 68, cx = 100, cy = 110;
+    needle.setAttribute("x2", (cx + r * Math.cos(rad)).toFixed(1));
+    needle.setAttribute("y2", (cy + r * Math.sin(rad)).toFixed(1));
+  }
 
   if (spread && spread.spreadPts != null) {
-    $("spread-note").textContent =
-      `VXN/VIX 溢价 ${fmt(spread.spreadPts)} 点 (${fmt(spread.spreadPct, 1)}%)\n${spread.note}`;
+    $("spread-note").textContent = `${fmt(spread.spreadPts)} 点 (${fmt(spread.spreadPct, 1)}%)`;
+    const rank = $("spread-rank");
+    if (rank) {
+      rank.textContent =
+        spread.spreadPct > 40 ? "历史分位 ↑ 偏高" : spread.spreadPct < 20 ? "历史分位 ↓ 偏低" : "历史分位 ● 常态";
+    }
+    const desc = $("spread-desc");
+    if (desc) desc.textContent = spread.note;
   }
 
   const rules = $("rules");
@@ -103,14 +126,14 @@ async function loadSnapshot(force = false) {
     const vxn = snap.vxn.latest ?? {};
 
     $("vix-price").textContent = fmt(vix.value);
+    $("vix-price").className = "value " + (vix.change > 0 ? "up" : vix.change < 0 ? "down" : "");
     applyChange($("vix-change"), vix.change, vix.changePct);
-    $("vix-range").textContent =
-      `今开 ${fmt(vix.open)}  高点 ${fmt(vix.high)}  低点 ${fmt(vix.low)}`;
+    $("vix-range").textContent = `今开 ${fmt(vix.open)}   高 ${fmt(vix.high)}   低 ${fmt(vix.low)}`;
 
     $("vxn-price").textContent = fmt(vxn.value);
+    $("vxn-price").className = "value " + (vxn.change > 0 ? "up" : vxn.change < 0 ? "down" : "");
     applyChange($("vxn-change"), vxn.change, vxn.changePct);
-    $("vxn-range").textContent =
-      `今开 ${fmt(vxn.open)}  高点 ${fmt(vxn.high)}  低点 ${fmt(vxn.low)}`;
+    $("vxn-range").textContent = `今开 ${fmt(vxn.open)}   高 ${fmt(vxn.high)}   低 ${fmt(vxn.low)}`;
 
     renderChart("vix-chart", "VIX", snap.vix.history.slice(-30));
     renderChart("vxn-chart", "VXN", snap.vxn.history.slice(-30));

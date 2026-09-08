@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#05070f" />
+    <title>UI 设计方案 V2 · 预览</title>
+    <style>
+      :root {
+        --bg: #05070f;
+        --glass: rgba(20, 27, 48, 0.55);
+        --glass2: rgba(26, 35, 60, 0.6);
+        --border: rgba(120, 150, 220, 0.16);
+        --text: #eaf0fb;
+        --muted: #7f8fb0;
+        --accent: #5b8cff;
+        --up: #2ee6a0;
+        --down: #ff5f7a;
+        --neutral: #ffc548;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        min-height: 100vh; color: var(--text);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+        background:
+          radial-gradient(1200px 600px at 20% -10%, rgba(91,140,255,.18), transparent 60%),
+          radial-gradient(900px 500px at 100% 0%, rgba(160,80,255,.12), transparent 55%),
+          var(--bg);
+        padding: 18px 16px calc(30px + env(safe-area-inset-bottom));
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap { max-width: 480px; margin: 0 auto; }
+      header.top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+      .tag { font-size:12px; color:var(--muted); letter-spacing:1.5px; }
+      .title { font-size:22px; font-weight:800; }
+      .live { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--up); }
+      .live .dot { width:8px; height:8px; border-radius:50%; background:var(--up); box-shadow:0 0 10px var(--up); animation:pulse 1.6s infinite; }
+      @keyframes pulse { 50% { opacity:.4; } }
+
+      /* Gauge */
+      .gauge-card { background:var(--glass); border:1px solid var(--border); border-radius:24px; padding:20px 18px 16px; backdrop-filter:blur(18px); box-shadow:0 10px 40px rgba(0,0,0,.4); }
+      .gauge-head { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:6px; }
+      .gauge-head .lbl { font-size:13px; color:var(--muted); }
+      .gauge-score { font-size:40px; font-weight:800; line-height:1; }
+      .gauge-score small { font-size:16px; color:var(--muted); font-weight:600; }
+      .conf { font-size:12px; color:var(--muted); }
+      svg.gauge { width:100%; height:120px; display:block; margin:4px 0 12px; }
+      .gauge-foot { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); }
+
+      /* Index cards */
+      .cards { display:grid; gap:14px; margin-top:14px; }
+      .card { background:var(--glass); border:1px solid var(--border); border-radius:20px; padding:16px; backdrop-filter:blur(14px); box-shadow:0 8px 30px rgba(0,0,0,.35); }
+      .card-top { display:flex; justify-content:space-between; align-items:flex-start; }
+      .idx { font-size:18px; font-weight:800; }
+      .idx-sub { font-size:12px; color:var(--muted); }
+      .sig-badge { font-size:12px; font-weight:700; padding:6px 10px; border-radius:999px; }
+      .sig-badge.up { color:var(--up); background:rgba(46,230,160,.12); box-shadow:inset 0 0 0 1px rgba(46,230,160,.3); }
+      .sig-badge.down { color:var(--down); background:rgba(255,95,122,.12); box-shadow:inset 0 0 0 1px rgba(255,95,122,.3); }
+      .sig-badge.neutral { color:var(--neutral); background:rgba(255,197,72,.12); box-shadow:inset 0 0 0 1px rgba(255,197,72,.3); }
+      .price { display:flex; align-items:baseline; gap:12px; margin-top:12px; }
+      .value { font-size:38px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.5px; }
+      .value.up { color:var(--up); text-shadow:0 0 18px rgba(46,230,160,.5); }
+      .value.down { color:var(--down); text-shadow:0 0 18px rgba(255,95,122,.5); }
+      .change { font-size:15px; font-weight:700; }
+      .change.up { color:var(--up); } .change.down { color:var(--down); } .change.neutral { color:var(--neutral); }
+      .ohl { margin-top:6px; font-size:12px; color:var(--muted); display:flex; gap:14px; }
+      .spark { margin-top:10px; height:70px; }
+      /* signal strength bar */
+      .bar { margin-top:12px; }
+      .bar-track { height:8px; position:relative; border-radius:999px; background:linear-gradient(90deg, var(--down), var(--neutral), var(--up)); opacity:.85; }
+      .bar-pos { position:absolute; top:50%; transform:translate(-50%,-50%); width:16px; height:16px; border-radius:50%; background:#fff; border:3px solid var(--bg); box-shadow:0 0 10px rgba(255,255,255,.4); }
+      .bar-lbl { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-top:5px; }
+
+      /* Spread */
+      .spread { margin-top:14px; background:var(--glass2); border:1px solid var(--border); border-radius:16px; padding:14px; }
+      .spread .h { font-size:13px; color:var(--muted); display:flex; justify-content:space-between; }
+      .spread .val { font-size:22px; font-weight:800; margin-top:4px; }
+      .spread p { font-size:12px; color:var(--muted); margin-top:6px; }
+
+      footer.nav { position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:space-around; background:rgba(10,14,26,.85); backdrop-filter:blur(16px); border-top:1px solid var(--border); padding:10px 0 calc(10px + env(safe-area-inset-bottom)); }
+      .nav-item { display:flex; flex-direction:column; align-items:center; gap:3px; font-size:10px; color:var(--muted); }
+      .nav-item.on { color:var(--accent); }
+      .nav-item svg { width:22px; height:22px; }
+      body { padding-bottom:76px; }
+      .note { text-align:center; font-size:11px; color:var(--muted); margin-top:16px; line-height:1.6; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <div>
+          <div class="tag">VIX · VXN 波动率终端</div>
+          <div class="title">波动率信号</div>
+        </div>
+        <div class="live"><span class="dot"></span>实时</div>
+      </header>
+
+      <div class="gauge-card">
+        <div class="gauge-head">
+          <div>
+            <div class="lbl">综合信号</div>
+            <div class="gauge-score"><span id="ov-score">57</span><small>/100 看多</small></div>
+          </div>
+          <div class="conf" id="ov-conf">置信度 74%</div>
+        </div>
+        <svg class="gauge" viewBox="0 0 200 120">
+          <defs>
+            <linearGradient id="g" x1="0" x2="1">
+              <stop offset="0" stop-color="#ff5f7a"/>
+              <stop offset=".5" stop-color="#ffc548"/>
+              <stop offset="1" stop-color="#2ee6a0"/>
+            </linearGradient>
+          </defs>
+          <path d="M20 110 A80 80 0 0 1 180 110" fill="none" stroke="url(#g)" stroke-width="14" stroke-linecap="round" opacity=".25"/>
+          <path id="gauge-arc" d="M20 110 A80 80 0 0 1 180 110" fill="none" stroke="url(#g)" stroke-width="14" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="251"/>
+          <line id="gauge-needle" x1="100" y1="110" x2="100" y2="42" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="100" cy="110" r="7" fill="#fff"/>
+        </svg>
+        <div class="gauge-foot"><span>看空 ←</span><span>中性</span><span>→ 看多</span></div>
+      </div>
+
+      <div class="cards">
+        <div class="card" id="card-vix">
+          <div class="card-top">
+            <div><div class="idx">VIX</div><div class="idx-sub">标普500 波动率</div></div>
+            <span class="sig-badge up" id="vix-badge">看多 54</span>
+          </div>
+          <div class="price"><span class="value up" id="vix-value">15.29</span><span class="change up" id="vix-change">-0.01 (-0.07%)</span></div>
+          <div class="ohl"><span>开 15.56</span><span>高 15.94</span><span>低 15.22</span></div>
+          <div class="spark" id="vix-spark"></div>
+          <div class="bar"><div class="bar-track"><div class="bar-pos" style="left:77%"></div></div><div class="bar-lbl"><span>看空</span><span>中性</span><span>看多</span></div></div>
+        </div>
+        <div class="card" id="card-vxn">
+          <div class="card-top">
+            <div><div class="idx">VXN</div><div class="idx-sub">纳指100 波动率</div></div>
+            <span class="sig-badge up" id="vxn-badge">看多 60</span>
+          </div>
+          <div class="price"><span class="value up" id="vxn-value">21.40</span><span class="change up" id="vxn-change">+1.36 (+6.79%)</span></div>
+          <div class="ohl"><span>开 21.04</span><span>高 22.09</span><span>低 21.04</span></div>
+          <div class="spark" id="vxn-spark"></div>
+          <div class="bar"><div class="bar-track"><div class="bar-pos" style="left:80%"></div></div><div class="bar-lbl"><span>看空</span><span>中性</span><span>看多</span></div></div>
+        </div>
+      </div>
+
+      <div class="spread">
+        <div class="h"><span>VXN / VIX 溢价</span><span>历史分位 ↑ 偏高</span></div>
+        <div class="val" id="spread-val">6.11 点 (40.0%)</div>
+        <p>科技板块相对大盘的波动率风险溢价偏高,市场为纳指 100 定价了比标普 500 更多的短期波动风险。</p>
+      </div>
+
+      <div class="note">
+        信号为规则模型,仅供教育参考,不构成投资建议。<br/>
+        这是一个 *改进版 UI 预览*,尚未部署到线上。
+      </div>
+    </div>
+
+    <footer class="nav">
+      <div class="nav-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l5-5 4 4 5-7 4 4"/></svg>行情</div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>信号</div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M10 4v16"/></svg>设置</div>
+    </footer>
+
+    <script>
+      // Live data into the preview (fetches the same snapshot API).
+      (async () => {
+        try {
+          const s = await (await fetch('/api/snapshot')).json();
+          const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+          set('ov-score', s.signal.overall.score);
+          set('ov-conf', '置信度 ' + s.signal.overall.confidence + '%');
+          document.getElementById('gauge-arc').style.strokeDashoffset = 251 - (251 * (s.signal.overall.score + 100) / 200);
+          const ang = -90 + (s.signal.overall.score + 100) / 200 * 180 - 90;
+          const r = 68, cx = 100, cy = 110, rad = ang * Math.PI / 180;
+          document.getElementById('gauge-needle').setAttribute('x2', cx + r * Math.cos(rad) * -1);
+          document.getElementById('gauge-needle').setAttribute('y2', cy + r * Math.sin(rad) * -1);
+          const put = (badge, value, change, open, high, low, changeCls) => {};
+          for (const [code, h] of Object.entries({ vix: s.vix, vxn: s.vxn })) {
+            const d = h.latest;
+            document.getElementById(code + '-value').textContent = d.value.toFixed(2);
+            const chEl = document.getElementById(code + '-change');
+            chEl.textContent = (d.change>0?'+':'') + d.change.toFixed(2) + ' (' + (d.changePct>0?'+':'') + d.changePct.toFixed(2) + '%)';
+            chEl.className = 'change ' + (d.change>0?'up':d.change<0?'down':'neutral');
+            document.getElementById(code + '-value').className = 'value ' + (d.change>0?'up':d.change<0?'down':'');
+            // sparkline
+            const closes = h.history.slice(-30).map(x=>x.close);
+            const min = Math.min(...closes), max = Math.max(...closes), range = max-min||1;
+            const W=300,H=70;
+            const pts = closes.map((c,i)=>`${(i/(closes.length-1)*W).toFixed(1)},${(H-(c-min)/range*H).toFixed(1)}`).join(' ');
+            const color = d.change>0?'#2ee6a0':d.change<0?'#ff5f7a':'#5b8cff';
+            document.getElementById(code+'-spark').innerHTML =
+              `<svg viewBox="0 0 ${W} ${H}" width="100%" height="70" preserveAspectRatio="none">
+                <defs><linearGradient id="sg-${code}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".35"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+                <polygon points="0,${H} ${pts} ${W},${H}" fill="url(#sg-${code})"/>
+                <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"/>
+              </svg>`;
+          }
+          set('spread-val', s.signal.spread.spreadPts.toFixed(2) + ' 点 (' + s.signal.spread.spreadPct.toFixed(1) + '%)');
+        } catch (e) { console.warn('preview data failed', e); }
+      })();
+    </script>
+  </body>
+</html>

@@ -2,11 +2,8 @@
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
-    <meta name="theme-color" content="#0b1220" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#05070f" />
     <meta name="description" content="VIX 与 VXN 波动率指数实时追踪、图表与信号" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -23,88 +20,102 @@
       <button id="install-btn">安装</button>
     </div>
 
-    <header class="app-header">
-      <div class="brand">
-        <span class="logo-dot"></span>
+    <div class="wrap">
+      <header class="top">
         <div>
-          <h1>波动率追踪</h1>
-          <p class="sub">VIX · VXN</p>
+          <div class="tag">VIX · VXN 波动率终端</div>
+          <div class="title">波动率信号</div>
         </div>
-      </div>
-      <div class="header-actions">
-        <button id="refresh-btn" class="icon-btn" title="刷新">⟳</button>
-        <button id="push-btn" class="icon-btn" title="开启推送">🔔</button>
-      </div>
-    </header>
+        <div class="header-actions">
+          <button id="refresh-btn" class="icon-btn" title="刷新" aria-label="刷新">⟳</button>
+          <button id="push-btn" class="icon-btn" title="开启推送" aria-label="开启推送">🔔</button>
+        </div>
+      </header>
 
-    <main class="content">
       <div id="status-bar" class="status-bar">
+        <span class="dot"></span>
         <span id="status-text">加载中…</span>
+      </div>
+
+      <div class="gauge-card">
+        <div class="gauge-head">
+          <div>
+            <div class="lbl">综合信号</div>
+            <div class="gauge-score"><span id="overall-score">--</span><small id="overall-label">/100 · 待定</small></div>
+          </div>
+          <div class="conf"><span id="overall-conf">置信度 --</span></div>
+        </div>
+        <svg class="gauge" viewBox="0 0 200 120">
+          <defs>
+            <linearGradient id="g" x1="0" x2="1">
+              <stop offset="0" stop-color="#ff5f7a"/>
+              <stop offset=".5" stop-color="#ffc548"/>
+              <stop offset="1" stop-color="#2ee6a0"/>
+            </linearGradient>
+          </defs>
+          <path d="M20 110 A80 80 0 0 1 180 110" fill="none" stroke="url(#g)" stroke-width="15" stroke-linecap="round" opacity=".22"/>
+          <path id="gauge-arc" d="M20 110 A80 80 0 0 1 180 110" fill="none" stroke="url(#g)" stroke-width="15" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="251"/>
+          <line id="gauge-needle" x1="100" y1="110" x2="100" y2="40" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="100" cy="110" r="7" fill="#fff"/>
+        </svg>
+        <div class="gauge-foot"><span>看空 ←</span><span>中性</span><span>→ 看多</span></div>
       </div>
 
       <section class="cards">
         <article class="card" id="card-vix">
           <div class="card-top">
-            <div>
-              <h2>VIX</h2>
-              <p>标普500 波动率</p>
-            </div>
-            <span id="vix-badge" class="badge">—</span>
+            <div><div class="idx">VIX</div><div class="idx-sub">标普500 波动率</div></div>
+            <span class="sig-badge" id="vix-badge">—</span>
           </div>
           <div class="price">
             <span id="vix-price" class="value">--</span>
             <span id="vix-change" class="change">--</span>
           </div>
-          <div class="range"><span id="vix-range">--</span></div>
-          <div id="vix-chart" class="chart"><canvas></canvas></div>
-          <div id="vix-conf" class="conf"></div>
+          <div class="ohl"><span id="vix-range">--</span></div>
+          <div id="vix-chart" class="spark"><canvas></canvas></div>
+          <div class="bar"><div class="bar-track"><div id="vix-pos" class="bar-pos"></div></div><div class="bar-lbl"><span>看空</span><span>中性</span><span>看多</span></div></div>
+          <div id="vix-conf" class="conf-inline"></div>
         </article>
 
         <article class="card" id="card-vxn">
           <div class="card-top">
-            <div>
-              <h2>VXN</h2>
-              <p>纳指100 波动率</p>
-            </div>
-            <span id="vxn-badge" class="badge">—</span>
+            <div><div class="idx">VXN</div><div class="idx-sub">纳指100 波动率</div></div>
+            <span class="sig-badge" id="vxn-badge">—</span>
           </div>
           <div class="price">
             <span id="vxn-price" class="value">--</span>
             <span id="vxn-change" class="change">--</span>
           </div>
-          <div class="range"><span id="vxn-range">--</span></div>
-          <div id="vxn-chart" class="chart"><canvas></canvas></div>
-          <div id="vxn-conf" class="conf"></div>
+          <div class="ohl"><span id="vxn-range">--</span></div>
+          <div id="vxn-chart" class="spark"><canvas></canvas></div>
+          <div class="bar"><div class="bar-track"><div id="vxn-pos" class="bar-pos"></div></div><div class="bar-lbl"><span>看空</span><span>中性</span><span>看多</span></div></div>
+          <div id="vxn-conf" class="conf-inline"></div>
         </article>
       </section>
 
-      <section class="panel summary">
-        <h3>综合信号</h3>
-        <div class="summary-row">
-          <div id="overall-badge" class="overall-badge">—</div>
-          <div class="overall-meta">
-            <div id="overall-score" class="score-num">0</div>
-            <p id="overall-conf" class="muted">置信度 --</p>
-          </div>
-        </div>
-        <div class="meter">
-          <div id="overall-meter" class="meter-fill"></div>
-          <div class="meter-labels"><span>看空</span><span>中性</span><span>看多</span></div>
-        </div>
-        <div id="spread-note" class="spread-note"></div>
-      </section>
+      <div class="spread" id="spread-card">
+        <div class="spread-h"><span>VXN / VIX 溢价</span><span id="spread-rank">—</span></div>
+        <div class="spread-val" id="spread-note">--</div>
+        <p id="spread-desc"></p>
+      </div>
 
       <section class="panel">
         <h3>信号说明</h3>
         <ul id="rules" class="rules"></ul>
         <p id="disclaimer" class="disclaimer"></p>
       </section>
-    </main>
 
-    <footer class="app-footer">
-      <span id="update-time">--</span>
-      <button id="push-toggle" class="btn-secondary">开启每日推送</button>
+      <div class="app-footer">
+        <span id="update-time">--</span>
+      </div>
+    </div>
+
+    <footer class="nav">
+      <div class="nav-item on" data-tab="market"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l5-5 4 4 5-7 4 4"/></svg>行情</div>
+      <div class="nav-item" data-tab="signal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>信号</div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M10 4v16"/></svg>设置</div>
     </footer>
+    <div class="push-fab"><button id="push-toggle">开启每日推送</button></div>
 
     <script src="/vendor/chart.umd.js"></script>
     <script type="module" src="/app.js"></script>
