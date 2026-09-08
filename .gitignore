@@ -5,3 +5,5 @@ subscriptions.json
 .env
 preview-*.png
 public/preview-v2.html
+bug-*.png
+preview-*.png
