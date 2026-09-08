@@ -1,0 +1,9 @@
+node_modules
+npm-debug.log
+.env
+certs
+vapid-keys.json
+subscriptions.json
+*.png
+work
+preview-*.png
