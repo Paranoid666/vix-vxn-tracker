@@ -46,17 +46,16 @@
           <div class="conf"><span id="overall-conf">置信度 --</span></div>
         </div>
         <svg class="gauge" viewBox="0 0 200 120">
-          <defs>
-            <linearGradient id="g" x1="0" x2="1">
-              <stop offset="0" stop-color="#ff5f7a"/>
-              <stop offset=".5" stop-color="#ffc548"/>
-              <stop offset="1" stop-color="#2ee6a0"/>
-            </linearGradient>
-          </defs>
-          <path d="M20 110 A80 80 0 0 1 180 110" fill="none" stroke="url(#g)" stroke-width="15" stroke-linecap="round" opacity=".22"/>
-          <path id="gauge-arc" fill="none" stroke="url(#g)" stroke-width="15" stroke-linecap="round"/>
-          <line id="gauge-needle" x1="100" y1="110" x2="100" y2="40" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-          <circle cx="100" cy="110" r="7" fill="#fff"/>
+          <!-- 刻度基线(中性=满弧淡色底) -->
+          <path d="M20 110 A80 80 0 1 1 180 110" fill="none" stroke="#26324d" stroke-width="14" stroke-linecap="round"/>
+          <!-- 信号填充弧(实色, 由 JS 着色) -->
+          <path id="gauge-arc" fill="none" stroke="#2ee6a0" stroke-width="14" stroke-linecap="round"/>
+          <!-- 指针(加粗 + 描边, 醒目) -->
+          <g id="gauge-needle">
+            <line x1="100" y1="110" x2="100" y2="30" stroke="#0b1220" stroke-width="6" stroke-linecap="round"/>
+            <line x1="100" y1="110" x2="100" y2="30" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round"/>
+            <circle cx="100" cy="110" r="6" fill="#0b1220" stroke="#fff" stroke-width="2"/>
+          </g>
         </svg>
         <div class="gauge-foot"><span>看空 ←</span><span>中性</span><span>→ 看多</span></div>
       </div>
@@ -110,11 +109,6 @@
       </div>
     </div>
 
-    <footer class="nav">
-      <div class="nav-item on" data-tab="market"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l5-5 4 4 5-7 4 4"/></svg>行情</div>
-      <div class="nav-item" data-tab="signal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>信号</div>
-      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M10 4v16"/></svg>设置</div>
-    </footer>
     <div class="push-fab"><button id="push-toggle">开启每日推送</button></div>
 
     <script src="/vendor/chart.umd.js"></script>

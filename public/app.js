@@ -61,17 +61,23 @@ function applyChange(el, change, pct) {
 }
 
 // Draw the filling arc + needle on the half-circle gauge. score is -100..+100.
-function drawGauge(score) {
+// Arc spans left(180deg) -> top(270deg) -> right(360deg). We place the needle
+// at the same angle as the arc's end so they always agree.
+const GAUGE_COLORS = {
+  Buy: "#2ee6a0",
+  Sell: "#ff5f7a",
+  neutral: "#ffc548",
+};
+function drawGauge(score, action) {
   const arc = $("gauge-arc");
   const needle = $("gauge-needle");
   if (!arc || !needle) return;
 
   const cx = 100, cy = 110, r = 80;
-  const pct = (score + 100) / 200; // 0..1, default 0.5 (neutral)
-  // Map score range to angle from -90deg (left) to +90deg (right).
-  const startDeg = -90;
-  const endDeg = -90 + pct * 180;
-  const largeArc = endDeg - startDeg > 180 ? 1 : 0;
+  const pct = (score + 100) / 200; // 0..1 (0=far bearish, 1=far bullish)
+  // Angle measured in degrees: 180 (left) .. 360 (right), passing 270 (top).
+  const startDeg = 180;
+  const endDeg = startDeg + pct * 180;
 
   const polar = (deg) => {
     const rad = (deg * Math.PI) / 180;
@@ -80,22 +86,37 @@ function drawGauge(score) {
   const [x1, y1] = polar(startDeg);
   const [x2, y2] = polar(endDeg);
 
-  // Only draw when there's actual fill; otherwise reset to empty path.
+  // Fill arc: only show if there is something to show.
   if (pct > 0.001) {
-    const sweep = 1; // always clockwise from left
-    arc.setAttribute("d", `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${largeArc} ${sweep} ${x2.toFixed(2)} ${y2.toFixed(2)}`);
+    // Going clockwise (sweep=0 in SVG coords for increasing angle from 180->360).
+    arc.setAttribute(
+      "d",
+      `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 0 0 ${x2.toFixed(2)} ${y2.toFixed(2)}`
+    );
+    // Solid color by signal direction (bright, readable). action is
+    // "Buy" | "Sell" | "Neutral"; map to a readable gauge color.
+    const key = action === "Buy" ? "Buy" : action === "Sell" ? "Sell" : "neutral";
+    const color = GAUGE_COLORS[key];
+    arc.style.stroke = color;
+    arc.style.filter = `drop-shadow(0 0 8px ${color}88)`;
   } else {
     arc.setAttribute("d", "");
   }
 
-  // Needle (pointer) points along the arc's end angle, slightly inset.
-  const nr = r - 2;
+  // Needle: points from hub to the arc's end angle (inset slightly).
+  const nr = 74;
   const [nx, ny] = polar(endDeg);
-  // Normalize the needle rotation around the hub so it's simple & reliable.
-  needle.setAttribute("x1", cx);
-  needle.setAttribute("y1", cy);
-  needle.setAttribute("x2", cx + (nx - cx) * 0.95);
-  needle.setAttribute("y2", cy + (ny - cy) * 0.95);
+  const tipX = cx + (nx - cx) * (nr / r);
+  const tipY = cy + (ny - cy) * (nr / r);
+  const lines = needle.querySelectorAll("line");
+  if (lines[0]) {
+    lines[0].setAttribute("x2", tipX.toFixed(2));
+    lines[0].setAttribute("y2", tipY.toFixed(2));
+  }
+  if (lines[1]) {
+    lines[1].setAttribute("x2", tipX.toFixed(2));
+    lines[1].setAttribute("y2", tipY.toFixed(2));
+  }
 }
 
 function renderSignal(signal) {
@@ -117,7 +138,7 @@ function renderSignal(signal) {
   $("overall-label").textContent = `/100 · ${overall.label}`;
   $("overall-conf").textContent = `置信度 ${overall.confidence}%`;
 
-  drawGauge(overall.score);
+  drawGauge(overall.score, overall.action);
 
   if (spread && spread.spreadPts != null) {
     $("spread-note").textContent = `${fmt(spread.spreadPts)} 点 (${fmt(spread.spreadPct, 1)}%)`;
@@ -249,23 +270,6 @@ $("install-btn").addEventListener("click", async () => {
 $("refresh-btn").addEventListener("click", () => loadSnapshot(true));
 $("push-toggle").addEventListener("click", subscribe);
 $("push-btn").addEventListener("click", subscribe);
-
-// Bottom nav tabs: switch the active highlight and scroll to the target area.
-const tabTargets = {
-  market: () => document.querySelector(".gauge-card"),
-  signal: () => $("spread-card") || document.querySelector(".panel"),
-  settings: () => document.querySelector(".panel"),
-};
-document.querySelectorAll(".nav-item").forEach((item) => {
-  item.addEventListener("click", () => {
-    const tab = item.dataset.tab;
-    if (!tab) return;
-    document.querySelectorAll(".nav-item").forEach((n) => n.classList.remove("on"));
-    item.classList.add("on");
-    const target = tabTargets[tab] && tabTargets[tab]();
-    if (target && target.scrollIntoView) target.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
-});
 
 // Bootstrap
 loadSnapshot();
