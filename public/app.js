@@ -60,6 +60,44 @@ function applyChange(el, change, pct) {
   el.className = "change " + (change > 0 ? "up" : change < 0 ? "down" : "flat");
 }
 
+// Draw the filling arc + needle on the half-circle gauge. score is -100..+100.
+function drawGauge(score) {
+  const arc = $("gauge-arc");
+  const needle = $("gauge-needle");
+  if (!arc || !needle) return;
+
+  const cx = 100, cy = 110, r = 80;
+  const pct = (score + 100) / 200; // 0..1, default 0.5 (neutral)
+  // Map score range to angle from -90deg (left) to +90deg (right).
+  const startDeg = -90;
+  const endDeg = -90 + pct * 180;
+  const largeArc = endDeg - startDeg > 180 ? 1 : 0;
+
+  const polar = (deg) => {
+    const rad = (deg * Math.PI) / 180;
+    return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+  };
+  const [x1, y1] = polar(startDeg);
+  const [x2, y2] = polar(endDeg);
+
+  // Only draw when there's actual fill; otherwise reset to empty path.
+  if (pct > 0.001) {
+    const sweep = 1; // always clockwise from left
+    arc.setAttribute("d", `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${largeArc} ${sweep} ${x2.toFixed(2)} ${y2.toFixed(2)}`);
+  } else {
+    arc.setAttribute("d", "");
+  }
+
+  // Needle (pointer) points along the arc's end angle, slightly inset.
+  const nr = r - 2;
+  const [nx, ny] = polar(endDeg);
+  // Normalize the needle rotation around the hub so it's simple & reliable.
+  needle.setAttribute("x1", cx);
+  needle.setAttribute("y1", cy);
+  needle.setAttribute("x2", cx + (nx - cx) * 0.95);
+  needle.setAttribute("y2", cy + (ny - cy) * 0.95);
+}
+
 function renderSignal(signal) {
   const { overall, vix, vxn, spread } = signal;
 
@@ -79,20 +117,7 @@ function renderSignal(signal) {
   $("overall-label").textContent = `/100 · ${overall.label}`;
   $("overall-conf").textContent = `置信度 ${overall.confidence}%`;
 
-  // Gauge arc fill (half-circle = 251 length).
-  const pct = (overall.score + 100) / 200; // 0..1
-  const arc = $("gauge-arc");
-  if (arc) arc.style.strokeDashoffset = 251 - 251 * pct;
-
-  // Gauge needle: -90deg (left) .. +90deg (right).
-  const needle = $("gauge-needle");
-  if (needle) {
-    const ang = -90 + pct * 180; // degrees
-    const rad = (ang * Math.PI) / 180;
-    const r = 68, cx = 100, cy = 110;
-    needle.setAttribute("x2", (cx + r * Math.cos(rad)).toFixed(1));
-    needle.setAttribute("y2", (cy + r * Math.sin(rad)).toFixed(1));
-  }
+  drawGauge(overall.score);
 
   if (spread && spread.spreadPts != null) {
     $("spread-note").textContent = `${fmt(spread.spreadPts)} 点 (${fmt(spread.spreadPct, 1)}%)`;
@@ -224,6 +249,23 @@ $("install-btn").addEventListener("click", async () => {
 $("refresh-btn").addEventListener("click", () => loadSnapshot(true));
 $("push-toggle").addEventListener("click", subscribe);
 $("push-btn").addEventListener("click", subscribe);
+
+// Bottom nav tabs: switch the active highlight and scroll to the target area.
+const tabTargets = {
+  market: () => document.querySelector(".gauge-card"),
+  signal: () => $("spread-card") || document.querySelector(".panel"),
+  settings: () => document.querySelector(".panel"),
+};
+document.querySelectorAll(".nav-item").forEach((item) => {
+  item.addEventListener("click", () => {
+    const tab = item.dataset.tab;
+    if (!tab) return;
+    document.querySelectorAll(".nav-item").forEach((n) => n.classList.remove("on"));
+    item.classList.add("on");
+    const target = tabTargets[tab] && tabTargets[tab]();
+    if (target && target.scrollIntoView) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+});
 
 // Bootstrap
 loadSnapshot();
